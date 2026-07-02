@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>EduGest CM — Test Frontend</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; display: flex; height: 100vh; }
+    .sidebar { width: 200px; background: #1e293b; color: white; padding: 1rem; }
+    .sidebar h2 { font-size: 16px; margin-bottom: 1.5rem; color: #94a3b8; }
+    .nav-item { padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; margin-bottom: 4px; }
+    .nav-item:hover, .nav-item.active { background: #3b82f6; }
+    .main { flex: 1; padding: 2rem; overflow-y: auto; }
+    .card { background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid #e2e8f0; }
+    .card h3 { font-size: 16px; margin-bottom: 1rem; color: #1e293b; }
+    input, textarea, select { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px; font-size: 14px; }
+    button { padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+    button:hover { background: #2563eb; }
+    .response { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-top: 1rem; font-family: monospace; font-size: 13px; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+    .token-display { background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 8px; padding: 8px 12px; margin-bottom: 1rem; font-size: 12px; color: #065f46; word-break: break-all; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 12px; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2>EduGest CM</h2>
+  <div class="nav-item active" onclick="showSection('login')">🔐 Connexion</div>
+  <div class="nav-item" onclick="showSection('epreuves')">📝 Épreuves</div>
+  <div class="nav-item" onclick="showSection('notes')">⭐ Notes</div>
+  <div class="nav-item" onclick="showSection('messages')">💬 Messages</div>
+  <div class="nav-item" onclick="showSection('bulletins')">📊 Bulletins</div>
+</div>
+
+<div class="main">
+
+  <!-- Token affiché en haut -->
+  <div id="token-zone" style="display:none">
+    <div class="token-display">
+      ✅ Connecté — Token : <span id="token-preview"></span>
+    </div>
+  </div>
+
+  <!-- SECTION LOGIN -->
+  <div id="login" class="section active">
+    <div class="card">
+      <h3>🔐 Connexion</h3>
+      <input type="text" id="username" placeholder="Nom d'utilisateur" value="admin">
+      <input type="password" id="password" placeholder="Mot de passe" value="admin123">
+      <button onclick="login()">Se connecter</button>
+      <div class="response" id="login-response">La réponse apparaîtra ici...</div>
+    </div>
+  </div>
+
+  <!-- SECTION ÉPREUVES -->
+  <div id="epreuves" class="section">
+    <div class="card">
+      <h3>📝 Créer une épreuve</h3>
+      <input type="text" id="ep-libelle" placeholder="Libellé de l'épreuve" value="Devoir 2 de Français">
+      <input type="number" id="ep-nature" placeholder="ID Nature (1=Contrôle)" value="1">
+      <input type="text" id="ep-auteur" placeholder="Auteur" value="Prof Martin">
+      <button onclick="creerEpreuve()">Créer l'épreuve</button>
+      <div class="response" id="epreuve-response">La réponse apparaîtra ici...</div>
+    </div>
+    <div class="card">
+      <h3>📋 Liste des épreuves</h3>
+      <button onclick="listerEpreuves()">Charger les épreuves</button>
+      <div class="response" id="liste-epreuves-response">La réponse apparaîtra ici...</div>
+    </div>
+  </div>
+
+  <!-- SECTION NOTES -->
+  <div id="notes" class="section">
+    <div class="card">
+      <h3>⭐ Saisir une note</h3>
+      <input type="text" id="note-matricule" placeholder="Matricule élève" value="EL-2024-001">
+      <input type="number" id="note-valeur" placeholder="Note (0-20)" value="15" min="0" max="20">
+      <input type="text" id="note-appreciation" placeholder="Appréciation" value="Bien">
+      <input type="number" id="note-epreuve" placeholder="ID Épreuve" value="1">
+      <input type="number" id="note-cours" placeholder="ID Cours" value="1">
+      <input type="number" id="note-session" placeholder="ID Session" value="1">
+      <button onclick="saisirNote()">Saisir la note</button>
+      <div class="response" id="note-response">La réponse apparaîtra ici...</div>
+    </div>
+    <div class="card">
+      <h3>📋 Notes d'un élève</h3>
+      <input type="text" id="matricule-recherche" placeholder="Matricule" value="EL-2024-001">
+      <button onclick="voirNotes()">Voir les notes</button>
+      <div class="response" id="notes-eleve-response">La réponse apparaîtra ici...</div>
+    </div>
+  </div>
+
+  <!-- SECTION MESSAGES -->
+  <div id="messages" class="section">
+    <div class="card">
+      <h3>💬 Envoyer un message</h3>
+      <input type="text" id="msg-objet" placeholder="Objet du message" value="Convocation réunion">
+      <textarea id="msg-info" rows="3" placeholder="Contenu du message">Réunion le 20 mai à 15h00 dans la salle des professeurs.</textarea>
+      <input type="text" id="msg-annee" placeholder="Année académique" value="2025-2026">
+      <button onclick="envoyerMessage()">Envoyer</button>
+      <div class="response" id="message-response">La réponse apparaîtra ici...</div>
+    </div>
+    <div class="card">
+      <h3>📬 Mes messages</h3>
+      <button onclick="voirMessages()">Charger mes messages</button>
+      <div class="response" id="mes-messages-response">La réponse apparaîtra ici...</div>
+    </div>
+  </div>
+
+  <!-- SECTION BULLETINS -->
+  <div id="bulletins" class="section">
+    <div class="card">
+      <h3>📊 Générer un bulletin</h3>
+      <input type="text" id="bul-matricule" placeholder="Matricule élève" value="EL-2024-001">
+      <input type="number" id="bul-session" placeholder="ID Session" value="1">
+      <button onclick="voirBulletin()">Générer le bulletin</button>
+      <div class="response" id="bulletin-response">La réponse apparaîtra ici...</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const API = 'http://localhost:8080/api';
+  let token = '';
+
+  function showSection(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function showResponse(elementId, data, isError = false) {
+    const el = document.getElementById(elementId);
+    el.textContent = JSON.stringify(data, null, 2);
+    el.style.background = isError ? '#fff1f2' : '#f0fdf4';
+    el.style.borderColor = isError ? '#fca5a5' : '#86efac';
+  }
+
+  async function request(method, url, body = null) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const options = { method, headers };
+    if (body) options.body = JSON.stringify(body);
+    const res = await fetch(API + url, options);
+    return res.json();
+  }
+
+  async function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    try {
+      const data = await request('POST', '/auth/login', { username, password });
+      showResponse('login-response', data);
+      if (data.token) {
+        token = data.token;
+        document.getElementById('token-zone').style.display = 'block';
+        document.getElementById('token-preview').textContent = token.substring(0, 40) + '...';
+      }
+    } catch (e) {
+      showResponse('login-response', { error: e.message }, true);
+    }
+  }
+
+  async function creerEpreuve() {
+    try {
+      const data = await request('POST', '/epreuves', {
+        libelle: document.getElementById('ep-libelle').value,
+        idNature: parseInt(document.getElementById('ep-nature').value),
+        auteur: document.getElementById('ep-auteur').value
+      });
+      showResponse('epreuve-response', data, data.status >= 400);
+    } catch (e) {
+      showResponse('epreuve-response', { error: e.message }, true);
+    }
+  }
+
+  async function listerEpreuves() {
+    try {
+      const data = await request('GET', '/epreuves');
+      showResponse('liste-epreuves-response', data, data.status >= 400);
+    } catch (e) {
+      showResponse('liste-epreuves-response', { error: e.message }, true);
+    }
+  }
+
+  async function saisirNote() {
+    try {
+      const data = await request('POST', '/evaluations', {
+        matricule: document.getElementById('note-matricule').value,
+        note: parseFloat(document.getElementById('note-valeur').value),
+        appreciation: document.getElementById('note-appreciation').value,
+        idEpreuve: parseInt(document.getElementById('note-epreuve').value),
+        idCours: parseInt(document.getElementById('note-cours').value),
+        idSession: parseInt(document.getElementById('note-session').value)
+      });
+      showResponse('note-response', data, data.status >= 400);
+    } catch (e) {
+      showResponse('note-response', { error: e.message }, true);
+    }
+  }
+
+  async function voirNotes() {
+    try {
+      const matricule = document.getElementById('matricule-recherche').value;
+      const data = await request('GET', `/evaluations/eleve/${matricule}`);
+      showResponse('notes-eleve-response', data, data.status >= 400);
+    } catch (e) {
+      showResponse('notes-eleve-response', { error: e.message }, true);
+    }
+  }
+
+  async function envoyerMessage() {
+    try {
+      const data = await request('POST', '/messages', {
+        objet: document.getElementById('msg-objet').value,
+        information: document.getElementById('msg-info').value,
+        type_message: 1,
+        AnneeAcade: document.getElementById('msg-annee').value
+      });
+      showResponse('message-response', data, data.status >= 400);
+    } catch (e) {
+      showResponse('message-response', { error: e.message }, true);
+    }
+  }
+
+  async function voirMessages() {
+    try {
+      const data = await request('GET', '/messages/mes-messages');
+      showResponse('mes-messages-response', data, data.status >= 400);
+    } catch (e) {
+      showResponse('mes-messages-response', { error: e.message }, true);
+    }
+  }
+
+  async function voirBulletin() {
+    try {
+      const matricule = document.getElementById('bul-matricule').value;
+      const session = document.getElementById('bul-session').value;
+      const data = await request('GET', `/bulletins/${matricule}/${session}`);
+      showResponse('bulletin-response', data, data.status >= 400);
+    } catch (e) {
+      showResponse('bulletin-response', { error: e.message }, true);
+    }
+  }
+</script>
+
+</body>
+</html>

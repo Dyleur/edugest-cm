@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'DIRECTEUR' | 'ENSEIGNANT' | 'SECRETAIRE' | 'PARENT';
+export type UserRole = 'ADMIN' | 'DIRECTEUR' | 'ENSEIGNANT' | 'RESPONSABLE_ADMIN' | 'PARENT';
 
 export type PersonType = 1 | 2 | 3 | 4;
 

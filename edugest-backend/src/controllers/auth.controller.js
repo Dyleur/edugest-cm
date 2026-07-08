@@ -57,14 +57,16 @@ const me = async (req, res) => {
 
 const changePassword = async (req, res) => {
   try {
-    const { oldPassword, newPassword } = req.body;
-    if (!oldPassword || !newPassword) {
+    const { oldPassword, newPassword, ancienMotDePasse, nouveauMotDePasse } = req.body;
+    const oldPwd = oldPassword || ancienMotDePasse;
+    const newPwd = newPassword || nouveauMotDePasse;
+    if (!oldPwd || !newPwd) {
       return res.status(400).json({
         status: 400,
         message: 'L\'ancien et le nouveau mot de passe sont requis.'
       });
     }
-    if (newPassword.length < 6) {
+    if (newPwd.length < 6) {
       return res.status(400).json({
         status: 400,
         message: 'Le nouveau mot de passe doit contenir au moins 6 caractères.'
@@ -73,8 +75,8 @@ const changePassword = async (req, res) => {
     const result = await authService.changePassword(
       req.user.idPers,
       req.user.role,
-      oldPassword,
-      newPassword
+      oldPwd,
+      newPwd
     );
     res.json({
       status: 200,

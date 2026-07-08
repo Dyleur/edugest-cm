@@ -1,120 +1,131 @@
 import { useState, useEffect } from 'react';
-import { Plus, BookOpen } from 'lucide-react';
+import { BookOpen, Plus, Search, Users, GraduationCap } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { Card, CardContent } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { useLanguage } from '../contexts/LanguageContext';
 import { coursAPI } from '../services/api';
-
-const couleurPalette = [
-  'bg-blue-500', 'bg-purple-500', 'bg-red-500', 'bg-green-500',
-  'bg-yellow-500', 'bg-orange-500', 'bg-pink-500', 'bg-indigo-500',
-  'bg-teal-500',
-];
+import { mockSubjects } from '../data/mock-data';
+import { toast } from 'sonner';
+import CreateSubjectModal from '../components/modals/CreateSubjectModal';
 
 export default function Subjects() {
-  const [subjects, setSubjects] = useState<any[]>([]);
+  const { t, language } = useLanguage();
+  const [subjects, setSubjects] = useState<any[]>(mockSubjects);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     coursAPI.list()
       .then(data => {
         const list = Array.isArray(data) ? data : [];
-        setSubjects(list.map((s: any, i: number) => ({
-          id: s.idCours,
-          nom: s.libelle,
-          coefficient: s.coefficient,
-          couleur: couleurPalette[i % couleurPalette.length],
-          enseignants: s.enseignants?.length || s.Enseignants?.length || 0,
-          actif: s.actif !== undefined ? s.actif : true,
+        setSubjects(list.map((c: any) => ({
+          id: c.idCours,
+          libelle: c.libelle,
+          coefficient: c.coefficient || 1,
+          actif: c.actif !== false,
+          enseignants: c.enseignants?.length || c.nbEnseignants || 0,
         })));
       })
-      .catch(() => {});
+      .catch(() => { setSubjects(mockSubjects); setLoading(false); })
+      .finally(() => setLoading(false));
   }, []);
+
+  const totalCoef = subjects.reduce((s: number, c: any) => s + c.coefficient, 0);
+  const activeSubjects = subjects.filter(s => s.actif).length;
+  const filteredSubjects = subjects.filter(s =>
+    s.libelle?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
-      <div
-        className="relative h-48 rounded-2xl bg-cover bg-center overflow-hidden shadow-lg"
-        style={{
-          backgroundImage: `url(https://images.unsplash.com/photo-1752920299211-28be8c9b0121?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHVkZW50cyUyMHN0dWR5aW5nJTIwYm9va3MlMjBsaWJyYXJ5fGVufDF8fHx8MTc3NzQ1NzkwN3ww&ixlib=rb-4.1.0&q=80&w=1080)`
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-blue-700" />
-        <div className="relative h-full flex items-center px-8 text-white">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Gestion des Matières</h1>
-            <p className="text-lg">Programme scolaire et matières enseignées</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[
+          { label: t('subjects.total'), value: subjects.length.toString(), sub: t('subjects.allActive'), icon: BookOpen, color: 'from-blue-400 to-blue-500', delay: '0s' },
+          { label: t('subjects.totalCoefficient'), value: totalCoef.toString(), sub: language === 'fr' ? 'Coefficients au total' : 'Total coefficients', icon: GraduationCap, color: 'from-violet-500 to-violet-600', delay: '0.1s' },
+          { label: t('subjects.assignedTeachers'), value: subjects.reduce((s: number, c: any) => s + (typeof c.enseignants === 'number' ? c.enseignants : 0), 0).toString(), sub: t('subjects.assigned'), icon: Users, color: 'from-emerald-500 to-emerald-600', delay: '0.15s' },
+        ].map((stat, i) => {
+          const Icon = stat.icon;
+          return (
+            <div key={i} className="animate-fade-in-up" style={{ animationDelay: stat.delay }}>
+              <Card className="border-border/50 overflow-hidden group">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">{stat.label}</p>
+                      <p className="text-2xl font-bold text-foreground mt-1">{stat.value}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{stat.sub}</p>
+                    </div>
+                    <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+                      <Icon className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+        })}
       </div>
 
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Matières enseignées</h2>
-          <p className="text-gray-600">Programme de l'enseignement primaire</p>
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input type="text" placeholder={language === 'fr' ? 'Rechercher une matière...' : 'Search subjects...'} className="pl-9 h-9" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
-        <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700">
-          <Plus className="w-4 h-4" />
-          Nouvelle matière
+        <Button size="sm" className="gap-1.5" onClick={() => setShowModal(true)}>
+          <Plus className="w-3.5 h-3.5" />
+          {t('subjects.new')}
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-          <CardContent className="pt-6">
-            <p className="text-sm opacity-90">Total Matières</p>
-            <p className="text-3xl font-bold mt-2">{subjects.length}</p>
-            <p className="text-xs opacity-75 mt-1">Toutes actives</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-          <CardContent className="pt-6">
-            <p className="text-sm opacity-90">Coefficient Total</p>
-            <p className="text-3xl font-bold mt-2">
-              {subjects.reduce((sum: number, s: any) => sum + s.coefficient, 0)}
-            </p>
-            <p className="text-xs opacity-75 mt-1">Points au total</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-          <CardContent className="pt-6">
-            <p className="text-sm opacity-90">Enseignants affectés</p>
-            <p className="text-3xl font-bold mt-2">
-              {subjects.reduce((sum: number, s: any) => sum + s.enseignants, 0)}
-            </p>
-            <p className="text-xs opacity-75 mt-1">Au total</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {subjects.map((subject: any) => (
-          <Card key={subject.id} className="hover:shadow-lg transition-shadow">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-4">
-                <div className={`${subject.couleur} p-4 rounded-xl`}>
-                  <BookOpen className="w-8 h-8 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold mb-1">{subject.nom}</h3>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Badge variant="outline">
-                      Coefficient: {subject.coefficient}
-                    </Badge>
-                    {subject.actif && (
-                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                        Actif
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    {subject.enseignants} enseignant{subject.enseignants > 1 ? 's' : ''} affecté{subject.enseignants > 1 ? 's' : ''}
-                  </p>
-                </div>
+      <div className="animate-fade-in-up" style={{ animationDelay: '0.25s' }}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-primary" />
+              {t('subjects.program')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
               </div>
-            </CardContent>
-          </Card>
-        ))}
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filteredSubjects.map((subject, i) => (
+                  <div key={subject.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <BookOpen className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{subject.libelle}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20">
+                            Coef: {subject.coefficient}
+                          </Badge>
+                          {!subject.actif && (
+                            <Badge variant="destructive" className="text-[10px]">Inactif</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
+      <CreateSubjectModal open={showModal} onOpenChange={setShowModal} onSuccess={() => {
+        coursAPI.list().then(data => {
+          const list = Array.isArray(data) ? data : [];
+          setSubjects(list.map((c: any) => ({ id: c.idCours, libelle: c.libelle, coefficient: c.coefficient || 1, actif: c.actif !== false, enseignants: c.enseignants?.length || 0 })));
+        }).catch(() => { setSubjects(mockSubjects); });
+      }} />
     </div>
   );
 }

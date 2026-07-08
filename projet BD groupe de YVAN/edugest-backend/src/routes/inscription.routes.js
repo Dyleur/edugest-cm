@@ -8,7 +8,7 @@ router.use(verifyToken);
 
 router.get('/', autoriser(['ADMIN', 'DIRECTEUR']), inscriptionController.getAllInscriptions);
 router.get('/eleve/:matricule', autoriser(['ADMIN', 'DIRECTEUR']), inscriptionController.getInscriptionsByEleve);
-router.post('/', autoriser(['ADMIN', 'DIRECTEUR', 'SECRETAIRE']), inscriptionController.inscrireEleve);
+router.post('/', autoriser(['ADMIN', 'DIRECTEUR', 'RESPONSABLE_ADMIN']), inscriptionController.inscrireEleve);
 router.put('/:id', autoriser(['ADMIN', 'DIRECTEUR']), inscriptionController.updateInscription);
 router.delete('/:id', autoriser(['ADMIN']), inscriptionController.deleteInscription);
 

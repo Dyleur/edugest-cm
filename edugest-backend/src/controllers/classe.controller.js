@@ -18,10 +18,20 @@ const getClasseById = async (req, res) => {
   }
 };
 
+const getElevesByClasse = async (req, res) => {
+  try {
+    const eleves = await classeService.getElevesByClasse(req.params.id);
+    res.json({ success: true, data: eleves });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const createClasse = async (req, res) => {
   try {
-    const classe = await classeService.createClasse(req.body);
-    res.status(201).json({ success: true, message: 'Classe créée avec succès', data: classe });
+    const classe = await classeService.createClasse({ ...req.body, idAdmin: req.user?.idPers });
+    const classeComplete = await classeService.getClasseById(classe.idClasse);
+    res.status(201).json({ success: true, message: 'Classe créée avec succès', data: classeComplete });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -45,4 +55,4 @@ const deleteClasse = async (req, res) => {
   }
 };
 
-module.exports = { getAllClasses, getClasseById, createClasse, updateClasse, deleteClasse };
+module.exports = { getAllClasses, getClasseById, getElevesByClasse, createClasse, updateClasse, deleteClasse };

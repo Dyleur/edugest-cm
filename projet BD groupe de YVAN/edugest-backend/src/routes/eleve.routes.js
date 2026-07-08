@@ -6,10 +6,10 @@ const { autoriser } = require('../middlewares/rbac');
 
 router.use(verifyToken);
 
-router.get('/', autoriser(['ADMIN', 'DIRECTEUR', 'SECRETAIRE']), eleveController.getAllEleves);
-router.get('/:matricule', autoriser(['ADMIN', 'DIRECTEUR', 'SECRETAIRE', 'ENSEIGNANT', 'PARENT']), eleveController.getEleveById);
-router.post('/', autoriser(['ADMIN', 'DIRECTEUR', 'SECRETAIRE']), eleveController.createEleve);
-router.put('/:matricule', autoriser(['ADMIN', 'DIRECTEUR', 'SECRETAIRE']), eleveController.updateEleve);
+router.get('/', autoriser(['ADMIN', 'DIRECTEUR', 'RESPONSABLE_ADMIN']), eleveController.getAllEleves);
+router.get('/:matricule', autoriser(['ADMIN', 'DIRECTEUR', 'RESPONSABLE_ADMIN', 'ENSEIGNANT', 'PARENT']), eleveController.getEleveById);
+router.post('/', autoriser(['ADMIN', 'DIRECTEUR', 'RESPONSABLE_ADMIN']), eleveController.createEleve);
+router.put('/:matricule', autoriser(['ADMIN', 'DIRECTEUR', 'RESPONSABLE_ADMIN']), eleveController.updateEleve);
 router.delete('/:matricule', autoriser(['ADMIN', 'DIRECTEUR']), eleveController.deleteEleve);
 
 router.get('/:matricule/notes', autoriser(['ADMIN', 'DIRECTEUR', 'ENSEIGNANT', 'PARENT']), async (req, res) => {
@@ -23,7 +23,7 @@ router.get('/:matricule/presences', autoriser(['ADMIN', 'DIRECTEUR', 'ENSEIGNANT
   presenceController.getPresencesByEleve(req, res);
 });
 
-router.get('/:matricule/paiements', autoriser(['ADMIN', 'DIRECTEUR', 'SECRETAIRE', 'PARENT']), async (req, res) => {
+router.get('/:matricule/paiements', autoriser(['ADMIN', 'DIRECTEUR', 'RESPONSABLE_ADMIN', 'PARENT']), async (req, res) => {
   const { getByEleve } = require('../controllers/paiement.controller');
   getByEleve(req, res);
 });
@@ -46,7 +46,7 @@ router.get('/:matricule/discipline', autoriser(['ADMIN', 'DIRECTEUR']), async (r
   getByEleve(req, res);
 });
 
-router.get('/:matricule/parents', autoriser(['ADMIN', 'DIRECTEUR', 'SECRETAIRE']), async (req, res) => {
+router.get('/:matricule/parents', autoriser(['ADMIN', 'DIRECTEUR', 'RESPONSABLE_ADMIN']), async (req, res) => {
   const { Parents, Personne } = require('../models/index');
   try {
     const parents = await Parents.findAll({
@@ -59,7 +59,7 @@ router.get('/:matricule/parents', autoriser(['ADMIN', 'DIRECTEUR', 'SECRETAIRE']
   }
 });
 
-router.post('/:matricule/parents', autoriser(['ADMIN', 'DIRECTEUR', 'SECRETAIRE']), async (req, res) => {
+router.post('/:matricule/parents', autoriser(['ADMIN', 'DIRECTEUR', 'RESPONSABLE_ADMIN']), async (req, res) => {
   const { Parents } = require('../models/index');
   try {
     const parent = await Parents.create({ ...req.body, matricule: req.params.matricule, idAdmin: req.user?.id });

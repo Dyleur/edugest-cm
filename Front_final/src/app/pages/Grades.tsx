@@ -1,153 +1,157 @@
 import { useState, useEffect } from 'react';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, BookOpen, CalendarDays, Award } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
+import { useLanguage } from '../contexts/LanguageContext';
 import { epreuvesAPI, evaluationsAPI, coursAPI } from '../services/api';
+import { mockEvaluations, mockSubjects } from '../data/mock-data';
+import { toast } from 'sonner';
+import CreateGradeModal from '../components/modals/CreateGradeModal';
 
-const couleurPalette = ['bg-blue-500', 'bg-purple-500', 'bg-red-500', 'bg-green-500'];
+const couleurPalette = ['from-blue-400 to-blue-500', 'from-violet-500 to-violet-600', 'from-rose-500 to-rose-600', 'from-emerald-500 to-emerald-600'];
 
 export default function Grades() {
-  const [evaluations, setEvaluations] = useState<any[]>([]);
-  const [students, setStudents] = useState<any[]>([]);
-  const [selectedEpreuve, setSelectedEpreuve] = useState<number | null>(null);
+  const { t, language } = useLanguage();
+  const [evaluations, setEvaluations] = useState<any[]>(() => mockEvaluations.map((ep: any, i: number) => ({
+    id: ep.idEpreuve,
+    matiere: mockSubjects.find((s: any) => s.idCours === ep.idCours)?.libelle || 'Matière',
+    type: ep.libelle || 'Devoir',
+    date: ep.dateEpreuve || '',
+    noteMax: ep.noteMax || 20,
+    couleur: ['from-blue-400 to-blue-500', 'from-violet-500 to-violet-600', 'from-rose-500 to-rose-600', 'from-emerald-500 to-emerald-600'][i % 4],
+  })));
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
     Promise.all([
       epreuvesAPI.list(),
       coursAPI.list(),
-      evaluationsAPI.getByEleve(''),
     ])
-      .then(([epreuvesData, coursData, evalData]) => {
+      .then(([epreuvesData, coursData]) => {
         const coursMap = new Map();
         (Array.isArray(coursData) ? coursData : []).forEach((c: any) => {
           coursMap.set(c.idCours, c.libelle);
         });
 
-        const epreuves = Array.isArray(epreuvesData) ? epreuvesData : [];
+        const epreuves = Array.isArray(epreuvesData) ? epreuvesData : (epreuvesData?.data || []);
         setEvaluations(epreuves.map((ep: any, i: number) => ({
           id: ep.idEpreuve,
           matiere: coursMap.get(ep.idCours) || ep.cours?.libelle || 'Matière',
-          type: ep.type || ep.libelle || 'Devoir',
+          type: ep.type || ep.libelle || language === 'fr' ? 'Devoir' : 'Test',
           date: ep.dateEpreuve || '',
           noteMax: ep.noteMax || 20,
-          moyenne: 0,
           couleur: couleurPalette[i % couleurPalette.length],
         })));
-
-        if (epreuves.length > 0) setSelectedEpreuve(epreuves[0].idEpreuve);
       })
-      .catch(() => {});
+      .catch(() => { setEvaluations(mockEvaluations.map((ep: any, i: number) => ({ id: ep.idEpreuve, matiere: mockSubjects.find((s: any) => s.idCours === ep.idCours)?.libelle || 'Matière', type: ep.libelle || 'Devoir', date: ep.dateEpreuve || '', noteMax: ep.noteMax || 20, couleur: ['from-blue-400 to-blue-500', 'from-violet-500 to-violet-600', 'from-rose-500 to-rose-600', 'from-emerald-500 to-emerald-600'][i % 4] }))); })
+      .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (!selectedEpreuve) return;
-    const evalData = Array.isArray(evaluations) ? evaluations : [];
-    const epreuveNotes: Record<string, number> = {};
-
-    evaluationsAPI.getByEleve('')
-      .then(data => {
-        if (Array.isArray(data)) {
-          data.forEach((e: any) => {
-            if (e.idEpreuve === selectedEpreuve) {
-              epreuveNotes[e.matricule] = e.note;
-            }
-          });
-        }
-      })
-      .catch(() => {});
-  }, [selectedEpreuve]);
+  const handleSuccess = () => {
+    epreuvesAPI.list().then(d => {
+      const items = Array.isArray(d) ? d : (d?.data || []);
+      setEvaluations(items.map((ep: any, i: number) => ({ id: ep.idEpreuve, matiere: ep.cours?.libelle || 'Matière', type: ep.type || ep.libelle || (language === 'fr' ? 'Devoir' : 'Test'), date: ep.dateEpreuve || '', noteMax: ep.noteMax || 20, couleur: couleurPalette[i % couleurPalette.length] })));
+    }).catch(() => { setEvaluations(mockEvaluations.map((ep: any, i: number) => ({ id: ep.idEpreuve, matiere: mockSubjects.find((s: any) => s.idCours === ep.idCours)?.libelle || 'Matière', type: ep.libelle || 'Devoir', date: ep.dateEpreuve || '', noteMax: ep.noteMax || 20, couleur: couleurPalette[i % couleurPalette.length] }))); });
+  };
 
   return (
     <div className="space-y-6">
-      <div
-        className="relative h-48 rounded-2xl bg-cover bg-center overflow-hidden shadow-lg"
-        style={{
-          backgroundImage: `url(https://images.unsplash.com/photo-1678822872007-698d622afeb7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHx0ZWFjaGVyJTIwdGVhY2hpbmclMjBjaGlsZHJlbiUyMGVkdWNhdGlvbnxlbnwxfHx8fDE3Nzc0NTc5MDZ8MA&ixlib=rb-4.1.0&q=80&w=1080)`
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-blue-700" />
-        <div className="relative h-full flex items-center px-8 text-white">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Saisie des Notes</h1>
-            <p className="text-lg">Évaluations et résultats scolaires</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center animate-fade-in-up">
         <div>
-          <h2 className="text-2xl font-bold">Évaluations récentes</h2>
-          <p className="text-gray-600">Toutes les évaluations</p>
+          <h2 className="text-lg font-semibold text-foreground">{language === 'fr' ? 'Évaluations récentes' : 'Recent Assessments'}</h2>
+          <p className="text-sm text-muted-foreground">{language === 'fr' ? 'Toutes les évaluations du trimestre' : 'All term assessments'}</p>
         </div>
-        <Button className="gap-2 bg-red-600 hover:bg-red-700">
-          <Plus className="w-4 h-4" />
-          Nouvelle évaluation
+        <Button size="sm" className="gap-1.5" onClick={() => setShowModal(true)}>
+          <Plus className="w-3.5 h-3.5" />
+          {t('grades.new')}
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {evaluations.map((evaluation) => (
-          <Card key={evaluation.id} className="hover:shadow-lg transition-shadow">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-3">
-                <div className={`${evaluation.couleur} p-3 rounded-lg`}>
-                  <FileText className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold truncate">{evaluation.matiere}</h3>
-                  <p className="text-sm text-gray-600">{evaluation.type}</p>
-                  <div className="mt-3 space-y-1">
-                    <p className="text-xs text-gray-500">{evaluation.date ? new Date(evaluation.date).toLocaleDateString() : 'N/A'}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Note max:</span>
-                      <Badge variant="outline">{evaluation.noteMax}</Badge>
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {evaluations.map((evaluation, i) => (
+              <div key={evaluation.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 0.08}s` }}>
+                <Card className="border-border/50 hover:shadow-md transition-all duration-300 group h-full">
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${evaluation.couleur} flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+                        <FileText className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground truncate">{evaluation.matiere}</h3>
+                        <p className="text-xs text-muted-foreground">{evaluation.type}</p>
+                        <div className="mt-3 flex items-center justify-between">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <CalendarDays className="w-3 h-3" />
+                            {evaluation.date ? new Date(evaluation.date).toLocaleDateString() : 'N/A'}
+                          </div>
+                          <Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20">
+                            /{evaluation.noteMax}
+                          </Badge>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Évaluations disponibles</span>
-            <Button className="bg-red-600 hover:bg-red-700">
-              Enregistrer les notes
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-3">Matière</th>
-                  <th className="text-left p-3">Type</th>
-                  <th className="text-center p-3">Date</th>
-                  <th className="text-center p-3">Note Max</th>
-                </tr>
-              </thead>
-              <tbody>
-                {evaluations.map((evalItem) => (
-                  <tr key={evalItem.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3 font-medium">{evalItem.matiere}</td>
-                    <td className="p-3">{evalItem.type}</td>
-                    <td className="p-3 text-center">{evalItem.date ? new Date(evalItem.date).toLocaleDateString() : '-'}</td>
-                    <td className="p-3 text-center">
-                      <Badge variant="outline">{evalItem.noteMax}</Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-primary" />
+                    {language === 'fr' ? 'Évaluations disponibles' : 'Available Assessments'}
+                  </span>
+                  <Button size="sm" className="gap-1.5" onClick={() => toast.success(language === 'fr' ? 'Notes enregistrées' : 'Grades saved')}>
+                    <Award className="w-3.5 h-3.5" />
+                    {t('grades.saveGrades')}
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left p-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{language === 'fr' ? 'Matière' : 'Subject'}</th>
+                        <th className="text-left p-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{language === 'fr' ? 'Type' : 'Type'}</th>
+                        <th className="text-center p-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{language === 'fr' ? 'Date' : 'Date'}</th>
+                        <th className="text-center p-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{language === 'fr' ? 'Note Max' : 'Max Score'}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {evaluations.map((evalItem) => (
+                        <tr key={evalItem.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                          <td className="p-3 font-medium text-foreground">{evalItem.matiere}</td>
+                          <td className="p-3 text-muted-foreground">
+                            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-xs">{evalItem.type}</Badge>
+                          </td>
+                          <td className="p-3 text-center text-muted-foreground">{evalItem.date ? new Date(evalItem.date).toLocaleDateString() : '-'}</td>
+                          <td className="p-3 text-center">
+                            <Badge variant="outline" className="font-mono text-xs">{evalItem.noteMax}</Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
+      <CreateGradeModal open={showModal} onOpenChange={setShowModal} onSuccess={handleSuccess} />
     </div>
   );
 }

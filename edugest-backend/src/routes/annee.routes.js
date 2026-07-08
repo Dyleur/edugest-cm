@@ -1,20 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const anneeController = require('../controllers/annee.controller');
+const { verifyToken } = require('../middlewares/auth');
+const { autoriser, ROLES } = require('../middlewares/rbac');
 
-// GET    /api/annees        → liste toutes les années
+router.use(verifyToken);
+router.use(autoriser(['ADMIN', 'RESPONSABLE_ADMIN', 'DIRECTEUR']));
+
 router.get('/', anneeController.getAllAnnees);
-
-// GET    /api/annees/:id    → détails d'une année
+router.get('/courante', anneeController.getAnneeCourante);
 router.get('/:id', anneeController.getAnneeById);
-
-// POST   /api/annees        → créer une année
 router.post('/', anneeController.createAnnee);
-
-// PUT    /api/annees/:id    → modifier une année
 router.put('/:id', anneeController.updateAnnee);
-
-// DELETE /api/annees/:id    → supprimer une année
 router.delete('/:id', anneeController.deleteAnnee);
 
 module.exports = router;

@@ -1,6 +1,7 @@
 const { Enseignant, Personne, Salle, Classe } = require('../models');
 const { Op } = require('sequelize');
 const bcrypt = require('bcryptjs');
+const sallesService = require('./salles.service');
 
 // Récupérer tous les enseignants
 const getAllEnseignants = async (query) => {
@@ -14,15 +15,22 @@ const getAllEnseignants = async (query) => {
     ];
   }
 
+  const includeClauses = [{
+    model: Personne,
+    where,           // filtre appliqué sur Personne
+    attributes: [
+      'idPers', 'nom', 'prenom',
+      'mobile', 'username', 'typePersonne'
+    ],
+  }, {
+    model: Salle,
+    as: 'salle',
+    required: false,
+    include: [{ model: Classe, attributes: ['libelle'] }],
+  }];
+
   const enseignants = await Enseignant.findAll({
-    include: [{
-      model: Personne,
-      where,           // filtre appliqué sur Personne
-      attributes: [
-        'idPers', 'nom', 'prenom',
-        'mobile', 'username', 'typePersonne'
-      ],
-    }],
+    include: includeClauses,
     order: [[Personne, 'nom', 'ASC']],
   });
   return enseignants;
@@ -37,6 +45,11 @@ const getEnseignantById = async (id) => {
         'idPers', 'nom', 'prenom',
         'mobile', 'username', 'typePersonne'
       ],
+    }, {
+      model: Salle,
+      as: 'salle',
+      required: false,
+      include: [{ model: Classe, attributes: ['libelle'] }],
     }],
   });
   if (!enseignant) {
@@ -53,6 +66,31 @@ const createEnseignant = async (data) => {
   });
   if (existingPersonne) {
     throw new Error('Ce nom d\'utilisateur existe déjà');
+  }
+
+  // Vérifier qu'un enseignant ne peut avoir qu'une seule classe
+  // On vérifie si l'enseignant a déjà une Salle assignée (via idTitulaire)
+  // Mais ici on crée un nouvel enseignant, donc pas de vérification nécessaire
+
+  if (data.idSalle) {
+    // Vérifier que la salle existe
+    const salle = await Salle.findByPk(data.idSalle, {
+      include: [{ model: Classe }],
+    });
+    if (!salle) throw new Error('Classe introuvable');
+
+    // Vérifier max 2 enseignants par classe (compter les salles de la même classe avec un titulaire)
+    const sallesMemeClasse = await Salle.findAll({
+      where: { idClasse: salle.idClasse, idTitulaire: { [Op.ne]: null } },
+    });
+    if (sallesMemeClasse.length >= 2) {
+      throw new Error('Cette classe a déjà le maximum de 2 enseignants');
+    }
+
+    // Vérifier que la salle n'a pas déjà un titulaire
+    if (salle.idTitulaire) {
+      throw new Error('Cette salle a déjà un enseignant assigné');
+    }
   }
 
   // Chiffrer le mot de passe
@@ -74,6 +112,11 @@ const createEnseignant = async (data) => {
     idCours: data.idCours,
     Actif: 1,
   });
+
+  // Étape 3 : Assigner l'enseignant à la salle (classe)
+  if (data.idSalle) {
+    await sallesService.setTitulaire(data.idSalle, { idEnseignant: enseignant.idEnseignant });
+  }
 
   return enseignant;
 };
@@ -97,6 +140,14 @@ const updateEnseignant = async (id, data) => {
     idCours: data.idCours,
   });
 
+  // Mettre à jour l'assignation de classe si idSalle est fourni
+  if (data.idSalle) {
+    // Retirer l'enseignant de son ancienne salle
+    await Salle.update({ idTitulaire: null }, { where: { idTitulaire: id } });
+    // Assigner à la nouvelle salle
+    await sallesService.setTitulaire(data.idSalle, { idEnseignant: id });
+  }
+
   return await getEnseignantById(id);
 };
 
@@ -109,17 +160,16 @@ const deleteEnseignant = async (id) => {
 
 // Récupérer les classes liées à un enseignant
 const getClassesByEnseignant = async (id) => {
-  const enseignant = await getEnseignantById(id);
+  await getEnseignantById(id);
 
-  const classes = await Classe.findAll({
-    include: [{
-      model: Salle,
-      attributes: ['idSalle', 'libelle'],
-    }],
+  // Trouver les salles dont cet enseignant est le titulaire
+  const salles = await Salle.findAll({
+    where: { idTitulaire: id },
+    include: [{ model: Classe, attributes: ['libelle'] }],
     order: [['libelle', 'ASC']],
   });
 
-  return classes;
+  return salles;
 };
 
 module.exports = {

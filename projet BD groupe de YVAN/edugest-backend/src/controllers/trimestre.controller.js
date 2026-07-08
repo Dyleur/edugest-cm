@@ -2,7 +2,7 @@ const { Trimestre, Session } = require('../models/index');
 
 const getAll = async (req, res) => {
   try {
-    const trimestres = await Trimestre.findAll({ order: [['created_at', 'ASC']] });
+    const trimestres = await Trimestre.findAll({ order: [['createdAt', 'ASC']] });
     res.json({ success: true, data: trimestres });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

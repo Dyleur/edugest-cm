@@ -6,8 +6,8 @@ const { autoriser } = require('../middlewares/rbac');
 
 router.use(verifyToken);
 
-router.get('/', autoriser(['ADMIN', 'DIRECTEUR', 'ENSEIGNANT', 'SECRETAIRE', 'PARENT']), cycleController.getAllCycles);
-router.get('/:id', autoriser(['ADMIN', 'DIRECTEUR', 'ENSEIGNANT', 'SECRETAIRE', 'PARENT']), cycleController.getCycleById);
+router.get('/', autoriser(['ADMIN', 'DIRECTEUR', 'ENSEIGNANT', 'RESPONSABLE_ADMIN', 'PARENT']), cycleController.getAllCycles);
+router.get('/:id', autoriser(['ADMIN', 'DIRECTEUR', 'ENSEIGNANT', 'RESPONSABLE_ADMIN', 'PARENT']), cycleController.getCycleById);
 router.post('/', autoriser(['ADMIN']), cycleController.createCycle);
 router.put('/:id', autoriser(['ADMIN']), cycleController.updateCycle);
 router.delete('/:id', autoriser(['ADMIN']), cycleController.deleteCycle);

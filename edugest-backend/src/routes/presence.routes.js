@@ -1,29 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const presenceController = require('../controllers/presence.controller');
+const { verifyToken } = require('../middlewares/auth');
+const { autoriser, ROLES } = require('../middlewares/rbac');
 
-// Marquer présent
+router.use(verifyToken);
+router.use(autoriser(['ADMIN', 'RESPONSABLE_ADMIN', 'DIRECTEUR', 'ENSEIGNANT', 'PARENT']));
+
+router.post('/appel', presenceController.faireAppel);
 router.put('/present', presenceController.marquerPresent);
-
-// Marquer absent
 router.put('/absent', presenceController.marquerAbsent);
 
-// Présences d'une salle pour une année
-router.get(
-  '/salle/:idSalle/annee/:idAcademi',
-  presenceController.getPresencesBySalle
-);
-
-// Absences d'un élève
-router.get(
-  '/eleve/:matricule/absences',
-  presenceController.getAbsencesByEleve
-);
-
-// Statistiques d'une salle
-router.get(
-  '/stats/salle/:idSalle/annee/:idAcademi',
-  presenceController.getStatistiquesBySalle
-);
+router.get('/salle/:idSalle/annee/:idAcademi', presenceController.getPresencesBySalle);
+router.get('/eleve/:matricule', presenceController.getPresencesByEleve);
+router.get('/eleve/:matricule/absences', presenceController.getAbsencesByEleve);
+router.get('/stats', presenceController.getGlobalStats);
+router.get('/stats/salle/:idSalle/annee/:idAcademi', presenceController.getStatistiquesBySalle);
 
 module.exports = router;

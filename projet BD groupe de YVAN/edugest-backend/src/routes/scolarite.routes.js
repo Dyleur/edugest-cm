@@ -8,7 +8,7 @@ router.use(verifyToken);
 
 router.get('/', autoriser(['ADMIN', 'DIRECTEUR']), scolariteController.getAll);
 router.post('/', autoriser(['ADMIN']), scolariteController.create);
-router.get('/:id/tranches', autoriser(['ADMIN', 'DIRECTEUR', 'SECRETAIRE']), scolariteController.getTranches);
+router.get('/:id/tranches', autoriser(['ADMIN', 'DIRECTEUR', 'RESPONSABLE_ADMIN']), scolariteController.getTranches);
 router.post('/:id/tranches', autoriser(['ADMIN']), scolariteController.createTranche);
 
 module.exports = router;

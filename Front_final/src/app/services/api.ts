@@ -26,7 +26,11 @@ async function request<T>(
   }
 
   if (res.status === 204) return undefined as unknown as T;
-  return res.json();
+  const json = await res.json();
+  if (json && json.success === true && 'data' in json) {
+    return json.data as T;
+  }
+  return json as T;
 }
 
 // ---- Auth ----
@@ -179,9 +183,11 @@ export const evaluationsAPI = {
 
 // ---- Bulletins ----
 export const bulletinsAPI = {
+  list: () => request<any[]>('/bulletins').catch(() => []),
   getByEleve: (matricule: string, idSession: number) =>
     request<any>(`/bulletins/eleve/${matricule}/${idSession}`),
-  getByClasse: (id: number) => request<any[]>(`/bulletins/classe/${id}`),
+  getByClasse: (id: number, idSession?: number) =>
+    request<any[]>(`/bulletins/classe/${id}${idSession ? `?idSession=${idSession}` : ''}`),
   getMoyenne: (matricule: string, idSession: number) =>
     request<any>(`/bulletins/moyenne/${matricule}/${idSession}`),
 };
@@ -278,17 +284,33 @@ export const rapportsAPI = {
   discipline: () => request<any>('/rapports/discipline'),
 };
 
-// ---- Messages ----
-export const messagesAPI = {
-  send: (data: any) =>
-    request<any>('/messages', { method: 'POST', body: JSON.stringify(data) }),
-  mesMessages: () => request<any[]>('/messages/mes-messages'),
-  all: () => request<any[]>('/messages'),
-  get: (id: number) => request<any>(`/messages/${id}`),
-  valider: (id: number) =>
-    request<any>(`/messages/${id}/valider`, { method: 'PATCH' }),
-  delete: (id: number) =>
-    request<void>(`/messages/${id}`, { method: 'DELETE' }),
+// ---- Conversations (messagerie instantanée) ----
+export const conversationsAPI = {
+  list: () => request<any[]>('/conversations'),
+  getMessages: (id: number, page = 1) => request<any>(`/conversations/${id}/messages?page=${page}`),
+  create: (participantIds: number[]) =>
+    request<any>('/conversations', { method: 'POST', body: JSON.stringify({ participantIds }) }),
+  getOrCreate: (otherUserId: number) =>
+    request<any>('/conversations/get-or-create', { method: 'POST', body: JSON.stringify({ otherUserId }) }),
+};
+
+// ---- Annonces (annonces générales) ----
+export const annoncesAPI = {
+  list: () => request<any[]>('/annonces'),
+  get: (id: number) => request<any>(`/annonces/${id}`),
+  create: (data: { titre: string; contenu?: string; fichierUrl?: string; fichierNom?: string; fichierTaille?: number }) =>
+    request<any>('/annonces', { method: 'POST', body: JSON.stringify(data) }),
+  upload: (file: File) => {
+    const formData = new FormData();
+    formData.append('fichier', file);
+    const token = getToken();
+    return fetch(`${API_URL}/annonces/upload`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    }).then(r => r.json());
+  },
+  delete: (id: number) => request<any>(`/annonces/${id}`, { method: 'DELETE' }),
 };
 
 // ---- Dashboard Stats ----
@@ -296,7 +318,30 @@ export const dashboardAPI = {
   stats: () => request<any>('/dashboard/stats'),
 };
 
+// ---- Communicants ----
+export const communicantsAPI = {
+  list: () => request<any[]>('/communicants'),
+};
+
 // ---- Parents ----
 export const parentsAPI = {
+  list: () => request<any[]>('/parents'),
   enfants: (idParent: number) => request<any[]>(`/parents/${idParent}/enfants`),
 };
+
+// ---- Notifications ----
+export const notificationsAPI = {
+  mesNotifications: () => request<any[]>('/notifications/mes-notifications'),
+  nonLuCount: () => request<{ count: number }>('/notifications/non-lu'),
+  get: (id: number) => request<any>(`/notifications/${id}`),
+  create: (data: any) =>
+    request<any>('/notifications', { method: 'POST', body: JSON.stringify(data) }),
+  markAsRead: (id: number) =>
+    request<any>(`/notifications/${id}/lire`, { method: 'PATCH' }),
+  markAllAsRead: () =>
+    request<any>('/notifications/lire-tout', { method: 'PATCH' }),
+  delete: (id: number) =>
+    request<void>(`/notifications/${id}`, { method: 'DELETE' }),
+};
+
+

@@ -2,7 +2,7 @@ const { Session, Trimestre } = require('../models/index');
 
 const getAll = async (req, res) => {
   try {
-    const sessions = await Session.findAll({ include: [{ model: Trimestre, attributes: ['libelle'] }], order: [['created_at', 'ASC']] });
+    const sessions = await Session.findAll({ include: [{ model: Trimestre, attributes: ['libelle'] }], order: [['createdAt', 'ASC']] });
     res.json({ success: true, data: sessions });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

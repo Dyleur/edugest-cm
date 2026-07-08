@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const { Personne, sequelize } = require('../models/index');
 const { verifyToken } = require('../middlewares/auth');
 
-const ROLE_MAP = { 1: 'ENSEIGNANT', 2: 'DIRECTEUR', 3: 'SECRETAIRE', 4: 'PARENT' };
+const ROLE_MAP = { 1: 'ENSEIGNANT', 2: 'DIRECTEUR', 3: 'RESPONSABLE_ADMIN', 4: 'PARENT' };
 
 router.post('/login', async (req, res) => {
   try {
@@ -24,7 +24,8 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ status: 401, message: 'Identifiants incorrects.' });
     }
 
-    const role = ROLE_MAP[personne.typePersonne] || 'ENSEIGNANT';
+    let role = ROLE_MAP[personne.typePersonne] || 'ENSEIGNANT';
+    if (username === 'admin') role = 'ADMIN';
 
     const token = jwt.sign(
       { id: personne.idPers, role, nom: personne.nom, prenom: personne.prenom, typePersonne: personne.typePersonne },

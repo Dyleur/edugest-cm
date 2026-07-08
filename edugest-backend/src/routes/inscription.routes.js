@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const inscriptionController = require('../controllers/inscription.controller');
+const { verifyToken } = require('../middlewares/auth');
+const { autoriser } = require('../middlewares/rbac');
+
+router.use(verifyToken);
+router.use(autoriser(['ADMIN', 'RESPONSABLE_ADMIN', 'DIRECTEUR']));
 
 // Liste toutes les inscriptions
 router.get('/', inscriptionController.getAllInscriptions);

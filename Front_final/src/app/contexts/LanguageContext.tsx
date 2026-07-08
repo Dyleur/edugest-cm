@@ -1,11 +1,21 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
-type Language = 'fr' | 'en';
+const LANGUAGES = ['fr', 'en', 'es', 'pt'] as const;
+type Language = (typeof LANGUAGES)[number];
+
+export const LANGUAGE_NAMES: Record<Language, string> = {
+  fr: 'Français',
+  en: 'English',
+  es: 'Español',
+  pt: 'Português',
+};
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
+  languages: readonly Language[];
+  languageNames: Record<Language, string>;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -22,6 +32,8 @@ export const translations = {
     'common.save': 'Enregistrer',
     'common.cancel': 'Annuler',
     'common.close': 'Fermer',
+    'common.password': 'Mot de passe',
+    'common.phone': 'Téléphone',
     'common.yes': 'Oui',
     'common.no': 'Non',
     'common.filter': 'Filtrer',
@@ -59,7 +71,10 @@ export const translations = {
     'nav.payments': 'Paiements',
     'nav.discipline': 'Discipline',
     'nav.messages': 'Messages',
+    'nav.annonces': 'Annonces',
+    'nav.documents': 'Documents',
     'nav.reports': 'Rapports',
+    'nav.history': 'Historique',
 
     // Dashboard
     'dashboard.title': 'Tableau de bord',
@@ -89,6 +104,10 @@ export const translations = {
     'students.thisQuarter': 'Ce trimestre',
     'students.matricule': 'Matricule',
     'students.fullName': 'Nom complet',
+    'students.lastName': 'Nom',
+    'students.firstName': 'Prénom',
+    'students.placeOfBirth': 'Lieu de naissance',
+    'students.language': 'Langue',
     'students.dateOfBirth': 'Date de naissance',
     'students.class': 'Classe',
     'students.gender': 'Sexe',
@@ -109,9 +128,11 @@ export const translations = {
     'classes.title': 'Gestion des Classes',
     'classes.subtitle': 'Organisation des cycles, classes et salles',
     'classes.new': 'Nouvelle classe',
+    'classes.name': 'Nom de la classe',
+    'classes.cycle': 'Cycle',
     'classes.byCycle': 'Classes par cycle',
     'classes.total': 'Total Classes',
-    'classes.onCycles': 'Sur 3 cycles',
+    'classes.onCycles': 'Sur 6 cycles',
     'classes.totalEnrollment': 'Effectif Total',
     'classes.enrolled': 'Élèves inscrits',
     'classes.average': 'Moyenne par classe',
@@ -123,6 +144,7 @@ export const translations = {
     'subjects.title': 'Gestion des Matières',
     'subjects.subtitle': 'Programme scolaire et matières enseignées',
     'subjects.new': 'Nouvelle matière',
+    'subjects.name': 'Nom de la matière',
     'subjects.taught': 'Matières enseignées',
     'subjects.program': 'Programme de l\'enseignement primaire',
     'subjects.total': 'Total Matières',
@@ -238,6 +260,7 @@ export const translations = {
     'messages.recipient': 'Destinataire',
     'messages.subject': 'Objet',
     'messages.message': 'Message',
+    'messages.content': 'Contenu',
     'messages.send': 'Envoyer',
     'messages.draft': 'Brouillon',
     'messages.templates': 'Modèles de messages',
@@ -443,6 +466,8 @@ export const translations = {
     'common.no': 'No',
     'common.filter': 'Filter',
     'common.download': 'Download',
+    'common.password': 'Password',
+    'common.phone': 'Phone',
     'common.upload': 'Upload',
     'common.total': 'Total',
     'common.male': 'Boys',
@@ -476,7 +501,10 @@ export const translations = {
     'nav.payments': 'Payments',
     'nav.discipline': 'Discipline',
     'nav.messages': 'Messages',
+    'nav.annonces': 'Announcements',
+    'nav.documents': 'Documents',
     'nav.reports': 'Reports',
+    'nav.history': 'History',
 
     // Dashboard
     'dashboard.title': 'Dashboard',
@@ -506,6 +534,10 @@ export const translations = {
     'students.thisQuarter': 'This quarter',
     'students.matricule': 'ID Number',
     'students.fullName': 'Full name',
+    'students.lastName': 'Last name',
+    'students.firstName': 'First name',
+    'students.placeOfBirth': 'Place of birth',
+    'students.language': 'Language',
     'students.dateOfBirth': 'Date of birth',
     'students.class': 'Class',
     'students.gender': 'Gender',
@@ -526,9 +558,11 @@ export const translations = {
     'classes.title': 'Class Management',
     'classes.subtitle': 'Organization of cycles, classes and rooms',
     'classes.new': 'New class',
+    'classes.name': 'Class name',
+    'classes.cycle': 'Cycle',
     'classes.byCycle': 'Classes by cycle',
     'classes.total': 'Total Classes',
-    'classes.onCycles': 'On 3 cycles',
+    'classes.onCycles': 'On 6 cycles',
     'classes.totalEnrollment': 'Total Enrollment',
     'classes.enrolled': 'Enrolled students',
     'classes.average': 'Average per class',
@@ -540,6 +574,7 @@ export const translations = {
     'subjects.title': 'Subject Management',
     'subjects.subtitle': 'School curriculum and taught subjects',
     'subjects.new': 'New subject',
+    'subjects.name': 'Subject name',
     'subjects.taught': 'Taught subjects',
     'subjects.program': 'Primary education curriculum',
     'subjects.total': 'Total Subjects',
@@ -655,6 +690,7 @@ export const translations = {
     'messages.recipient': 'Recipient',
     'messages.subject': 'Subject',
     'messages.message': 'Message',
+    'messages.content': 'Content',
     'messages.send': 'Send',
     'messages.draft': 'Draft',
     'messages.templates': 'Message templates',
@@ -843,13 +879,157 @@ export const translations = {
     'parent.messages.title': 'My Messages',
     'parent.messages.subtitle': 'School communications',
     'parent.messages.sender': 'Sender',
-  }
+  },
+
+  es: {
+    'common.search': 'Buscar',
+    'common.add': 'Añadir',
+    'common.save': 'Guardar',
+    'common.cancel': 'Cancelar',
+    'common.export': 'Exportar',
+    'common.download': 'Descargar',
+    'common.status': 'Estado',
+    'common.total': 'Total',
+    'auth.login': 'Iniciar sesión',
+    'auth.username': 'Usuario',
+    'auth.password': 'Contraseña',
+    'auth.signIn': 'Conectar',
+    'auth.welcome': 'Bienvenido',
+    'nav.dashboard': 'Panel',
+    'nav.students': 'Estudiantes',
+    'nav.teachers': 'Profesores',
+    'nav.classes': 'Clases',
+    'nav.subjects': 'Materias',
+    'nav.attendance': 'Asistencia',
+    'nav.grades': 'Notas',
+    'nav.reportCards': 'Boletines',
+    'nav.messages': 'Mensajes',
+    'nav.annonces': 'Anuncios',
+    'nav.documents': 'Documentos',
+    'nav.myChild': 'Mi Hijo',
+    'nav.childProfile': 'Perfil del niño',
+    'nav.payments': 'Pagos',
+    'nav.discipline': 'Disciplina',
+    'nav.timetable': 'Horario',
+    'nav.reports': 'Informes',
+    'nav.history': 'Historial',
+    'students.title': 'Gestión de Estudiantes',
+    'students.new': 'Nuevo estudiante',
+    'students.search': 'Buscar estudiante...',
+    'students.total': 'Total Estudiantes',
+    'students.matricule': 'Matrícula',
+    'students.fullName': 'Nombre completo',
+    'students.dateOfBirth': 'Fecha de nacimiento',
+    'students.class': 'Clase',
+    'students.gender': 'Género',
+    'students.lastName': 'Apellido',
+    'students.firstName': 'Nombre',
+    'teachers.title': 'Gestión de Profesores',
+    'teachers.new': 'Nuevo profesor',
+    'classes.title': 'Gestión de Clases',
+    'classes.new': 'Nueva clase',
+    'classes.name': 'Nombre de la clase',
+    'classes.cycle': 'Ciclo',
+    'subjects.title': 'Gestión de Materias',
+    'subjects.new': 'Nueva materia',
+    'subjects.name': 'Nombre de la materia',
+    'subjects.coefficient': 'Coeficiente',
+    'reportCards.title': 'Boletines',
+    'reportCards.exportAll': 'Exportar todo (PDF)',
+    'reportCards.student': 'Estudiante',
+    'reportCards.grade': 'Nota',
+    'reportCards.rank': 'Rango',
+    'reportCards.comment': 'Comentario',
+    'messages.title': 'Comunicación',
+    'messages.new': 'Nuevo mensaje',
+    'messages.send': 'Enviar',
+    'messages.subject': 'Asunto',
+    'messages.message': 'Mensaje',
+    'messages.content': 'Contenido',
+    'payments.title': 'Pagos',
+    'discipline.title': 'Disciplina',
+    'timetable.title': 'Horario',
+    'reports.title': 'Informes y Exportaciones',
+    'common.password': 'Contraseña',
+    'common.phone': 'Teléfono',
+  },
+
+  pt: {
+    'common.search': 'Pesquisar',
+    'common.add': 'Adicionar',
+    'common.save': 'Salvar',
+    'common.cancel': 'Cancelar',
+    'common.export': 'Exportar',
+    'common.download': 'Baixar',
+    'common.status': 'Status',
+    'common.total': 'Total',
+    'auth.login': 'Entrar',
+    'auth.username': 'Usuário',
+    'auth.password': 'Senha',
+    'auth.signIn': 'Conectar',
+    'auth.welcome': 'Bem-vindo',
+    'nav.dashboard': 'Painel',
+    'nav.students': 'Alunos',
+    'nav.teachers': 'Professores',
+    'nav.classes': 'Turmas',
+    'nav.subjects': 'Disciplinas',
+    'nav.attendance': 'Presença',
+    'nav.grades': 'Notas',
+    'nav.reportCards': 'Boletins',
+    'nav.messages': 'Mensagens',
+    'nav.annonces': 'Anúncios',
+    'nav.documents': 'Documentos',
+    'nav.payments': 'Pagamentos',
+    'nav.discipline': 'Disciplina',
+    'nav.timetable': 'Horário',
+    'nav.reports': 'Relatórios',
+    'nav.history': 'Histórico',
+    'students.title': 'Gestão de Alunos',
+    'students.new': 'Novo aluno',
+    'students.search': 'Pesquisar aluno...',
+    'students.total': 'Total Alunos',
+    'students.matricule': 'Matrícula',
+    'students.fullName': 'Nome completo',
+    'students.dateOfBirth': 'Data de nascimento',
+    'students.class': 'Turma',
+    'students.gender': 'Gênero',
+    'students.lastName': 'Sobrenome',
+    'students.firstName': 'Nome',
+    'teachers.title': 'Gestão de Professores',
+    'teachers.new': 'Novo professor',
+    'classes.title': 'Gestão de Turmas',
+    'classes.new': 'Nova turma',
+    'classes.name': 'Nome da turma',
+    'classes.cycle': 'Ciclo',
+    'subjects.title': 'Gestão de Disciplinas',
+    'subjects.new': 'Nova disciplina',
+    'subjects.name': 'Nome da disciplina',
+    'subjects.coefficient': 'Coeficiente',
+    'reportCards.title': 'Boletins',
+    'reportCards.exportAll': 'Exportar tudo (PDF)',
+    'reportCards.student': 'Aluno',
+    'reportCards.grade': 'Nota',
+    'reportCards.rank': 'Posição',
+    'reportCards.comment': 'Comentário',
+    'messages.title': 'Comunicação',
+    'messages.new': 'Nova mensagem',
+    'messages.send': 'Enviar',
+    'messages.subject': 'Assunto',
+    'messages.message': 'Mensagem',
+    'messages.content': 'Conteúdo',
+    'payments.title': 'Pagamentos',
+    'discipline.title': 'Disciplina',
+    'timetable.title': 'Horário',
+    'reports.title': 'Relatórios e Exportações',
+    'common.password': 'Senha',
+    'common.phone': 'Telefone',
+  },
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<Language>(() => {
-    const saved = localStorage.getItem('edugest_language');
-    return (saved === 'en' || saved === 'fr') ? saved : 'fr';
+    const saved = localStorage.getItem('edugest_language') as Language | null;
+    return (saved && LANGUAGES.includes(saved)) ? saved : 'fr';
   });
 
   useEffect(() => {
@@ -857,15 +1037,15 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   }, [language]);
 
   const setLanguage = (lang: Language) => {
-    setLanguageState(lang);
+    if (LANGUAGES.includes(lang)) setLanguageState(lang);
   };
 
   const t = (key: string): string => {
-    return translations[language][key] || key;
+    return (translations[language] as any)?.[key] || translations.en?.[key as keyof typeof translations.en] || key;
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, languages: [...LANGUAGES], languageNames: LANGUAGE_NAMES }}>
       {children}
     </LanguageContext.Provider>
   );

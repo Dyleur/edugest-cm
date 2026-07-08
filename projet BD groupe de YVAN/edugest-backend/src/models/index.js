@@ -99,6 +99,12 @@ Parents.belongsTo(Personne, { foreignKey: 'idPers' });
 Eleve.hasMany(Parents, { foreignKey: 'matricule' });
 Parents.belongsTo(Eleve, { foreignKey: 'matricule' });
 
+EmploiDuTemps.belongsTo(Classe, { foreignKey: 'idClasse' });
+EmploiDuTemps.belongsTo(Cours, { foreignKey: 'idCours' });
+
+Rapport.belongsTo(Eleve, { foreignKey: 'matricule' });
+Eleve.hasMany(Rapport, { foreignKey: 'matricule' });
+
 Cours.belongsTo(Livres, { foreignKey: 'idLivre' });
 Livres.hasMany(Cours, { foreignKey: 'idLivre' });
 Livres.belongsTo(Specialite, { foreignKey: 'idSpecialite' });

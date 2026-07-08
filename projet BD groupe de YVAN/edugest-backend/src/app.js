@@ -34,6 +34,8 @@ app.use('/api/paiements', require('./routes/paiement.routes'));
 app.use('/api/discipline', require('./routes/discipline.routes'));
 app.use('/api/rapports', require('./routes/rapport.routes'));
 app.use('/api/messages', require('./routes/messages'));
+app.use('/api/parents', require('./routes/parents.routes'));
+app.use('/api/dashboard', require('./routes/dashboard.routes'));
 
 app.use((err, req, res, next) => {
   const status = err.status || 500;

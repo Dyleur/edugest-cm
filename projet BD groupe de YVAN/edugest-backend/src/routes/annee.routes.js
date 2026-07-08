@@ -7,7 +7,7 @@ const { autoriser } = require('../middlewares/rbac');
 router.use(verifyToken);
 
 router.get('/', autoriser(['ADMIN', 'DIRECTEUR']), anneeController.getAllAnnees);
-router.get('/courante', autoriser(['ADMIN', 'DIRECTEUR', 'ENSEIGNANT', 'SECRETAIRE', 'PARENT']), anneeController.getAllAnnees);
+router.get('/courante', autoriser(['ADMIN', 'DIRECTEUR', 'ENSEIGNANT', 'RESPONSABLE_ADMIN', 'PARENT']), anneeController.getAllAnnees);
 router.get('/:id', autoriser(['ADMIN', 'DIRECTEUR']), anneeController.getAnneeById);
 router.post('/', autoriser(['ADMIN']), anneeController.createAnnee);
 router.put('/:id', autoriser(['ADMIN']), anneeController.updateAnnee);

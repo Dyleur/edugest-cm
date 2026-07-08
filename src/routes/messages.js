@@ -15,7 +15,7 @@ const {
 router.use(verifyToken);
 
 // POST /api/messages — envoyer un message
-router.post('/', autoriser(['ADMIN', 'DIRECTEUR', 'ENSEIGNANT', 'SECRETAIRE']), envoyerMessage);
+router.post('/', autoriser(['ADMIN', 'DIRECTEUR', 'ENSEIGNANT', 'RESPONSABLE_ADMIN']), envoyerMessage);
 
 // GET /api/messages/mes-messages — mes messages envoyés
 router.get('/mes-messages', mesMessages);

@@ -1,163 +1,77 @@
-const { Frequente, Eleve, Salle, Classe, AnneeAcademique } = require('../models');
+const { Frequente } = require('../models');
+const { Op } = require('sequelize');
 
-// Marquer un élève présent
-const marquerPresent = async (data) => {
-  // Vérifier que l'inscription existe
-  const inscription = await Frequente.findOne({
-    where: {
-      matricule: data.matricule,
-      idAcademi: data.idAcademi,
-      idSalle: data.idSalle,
-    },
-  });
-  if (!inscription) {
-    throw new Error('Aucune inscription trouvée pour cet élève');
-  }
-
-  // Mettre à jour le statut
-  await inscription.update({
-    commentaire: 'PRESENT|',
-  });
-
-  return inscription;
-};
-
-// Marquer un élève absent
-const marquerAbsent = async (data) => {
-  // Vérifier que l'inscription existe
-  const inscription = await Frequente.findOne({
-    where: {
-      matricule: data.matricule,
-      idAcademi: data.idAcademi,
-      idSalle: data.idSalle,
-    },
-  });
-  if (!inscription) {
-    throw new Error('Aucune inscription trouvée pour cet élève');
-  }
-
-  // Le motif est optionnel — 'Sans motif' par défaut
-  const motif = data.motif || 'Sans motif';
-
-  // Mettre à jour le statut
-  await inscription.update({
-    commentaire: `ABSENT|${motif}`,
-  });
-
-  return inscription;
-};
-
-// Récupérer les présences d'une salle
-const getPresencesBySalle = async (idSalle, idAcademi) => {
-  const presences = await Frequente.findAll({
-    where: {
-      idSalle,
-      idAcademi,
-    },
-    include: [
-      {
-        model: Eleve,
-        attributes: ['matricule', 'nom', 'prenom', 'sexe'],
+const faireAppel = async (data) => {
+  const results = [];
+  for (const item of data.presences || []) {
+    const [record, created] = await Frequente.findOrCreate({
+      where: {
+        idSalle: data.idSalle,
+        idAcademi: data.idAcademi,
+        matricule: item.matricule,
       },
-      {
-        model: Salle,
-        attributes: ['idSalle', 'libelle'],
-        include: [{
-          model: Classe,
-          attributes: ['idClasse', 'libelle'],
-        }],
+      defaults: {
+        idSalle: data.idSalle,
+        idAcademi: data.idAcademi,
+        matricule: item.matricule,
+        commentaire: item.statut === 'present' ? 'PRESENT' : `ABSENT|${item.motif || ''}`,
       },
-      {
-        model: AnneeAcademique,
-        attributes: ['idAnnee', 'libelle'],
-      },
-    ],
-    order: [[Eleve, 'nom', 'ASC']],
-  });
-
-  // On enrichit chaque enregistrement avec le statut parsé
-  const result = presences.map((p) => {
-    const raw = p.commentaire || '';
-    const parts = raw.split('|');
-    return {
-      ...p.toJSON(),
-      statut: parts[0] || 'INCONNU',   // PRESENT ou ABSENT
-      motif: parts[1] || '',            // motif de l'absence
-    };
-  });
-
-  return result;
-};
-
-// Récupérer les absences d'un élève
-const getAbsencesByEleve = async (matricule) => {
-  // Vérifier que l'élève existe
-  const eleve = await Eleve.findByPk(matricule);
-  if (!eleve) {
-    throw new Error('Élève introuvable');
-  }
-
-  // Récupérer toutes ses lignes marquées ABSENT
-  const absences = await Frequente.findAll({
-    where: { matricule },
-    include: [
-      {
-        model: Salle,
-        attributes: ['idSalle', 'libelle'],
-        include: [{
-          model: Classe,
-          attributes: ['idClasse', 'libelle'],
-        }],
-      },
-      {
-        model: AnneeAcademique,
-        attributes: ['idAnnee', 'libelle'],
-      },
-    ],
-  });
-
-  // Filtrer uniquement les absences et parser le commentaire
-  const result = absences
-    .filter((p) => p.commentaire && p.commentaire.startsWith('ABSENT'))
-    .map((p) => {
-      const parts = p.commentaire.split('|');
-      return {
-        ...p.toJSON(),
-        statut: parts[0],
-        motif: parts[1] || 'Sans motif',
-      };
     });
-
-  return result;
+    results.push(record);
+  }
+  return results;
 };
 
-// Statistiques de présence d'une salle
-const getStatistiquesBySalle = async (idSalle, idAcademi) => {
-  const presences = await Frequente.findAll({
-    where: { idSalle, idAcademi },
+const marquerPresent = async (data) => {
+  const [record, created] = await Frequente.findOrCreate({
+    where: { idSalle: data.idSalle, idAcademi: data.idAcademi, matricule: data.matricule },
+    defaults: { idSalle: data.idSalle, idAcademi: data.idAcademi, matricule: data.matricule, commentaire: 'PRESENT' },
   });
+  if (!created) await record.update({ commentaire: 'PRESENT' });
+  return record;
+};
 
-  const total = presences.length;
-  const presents = presences.filter(
-    (p) => p.commentaire && p.commentaire.startsWith('PRESENT')
-  ).length;
-  const absents = presences.filter(
-    (p) => p.commentaire && p.commentaire.startsWith('ABSENT')
-  ).length;
+const marquerAbsent = async (data) => {
+  const motif = data.motif || '';
+  const [record, created] = await Frequente.findOrCreate({
+    where: { idSalle: data.idSalle, idAcademi: data.idAcademi, matricule: data.matricule },
+    defaults: { idSalle: data.idSalle, idAcademi: data.idAcademi, matricule: data.matricule, commentaire: `ABSENT|${motif}` },
+  });
+  if (!created) await record.update({ commentaire: `ABSENT|${motif}` });
+  return record;
+};
 
-  return {
-    total,
-    presents,
-    absents,
-    tauxPresence: total > 0 ? ((presents / total) * 100).toFixed(2) + '%' : '0%',
-    tauxAbsence: total > 0 ? ((absents / total) * 100).toFixed(2) + '%' : '0%',
-  };
+const getPresencesBySalle = async (idSalle, idAcademi) => {
+  return Frequente.findAll({ where: { idSalle, idAcademi } });
+};
+
+const getPresencesByEleve = async (matricule) => {
+  return Frequente.findAll({ where: { matricule }, order: [['created_at', 'DESC']] });
+};
+
+const getAbsencesByEleve = async (matricule) => {
+  return Frequente.findAll({
+    where: { matricule, commentaire: { [Op.like]: 'ABSENT%' } },
+    order: [['created_at', 'DESC']],
+  });
+};
+
+const getGlobalStats = async () => {
+  const total = await Frequente.count();
+  const presents = await Frequente.count({ where: { commentaire: 'PRESENT' } });
+  const absents = await Frequente.count({ where: { commentaire: { [Op.like]: 'ABSENT%' } } });
+  return { total, presents, absents, taux: total > 0 ? Math.round(presents / total * 100) : 0 };
+};
+
+const getStatistiquesBySalle = async (idSalle, idAcademi) => {
+  const total = await Frequente.count({ where: { idSalle, idAcademi } });
+  const presents = await Frequente.count({ where: { idSalle, idAcademi, commentaire: 'PRESENT' } });
+  const absents = await Frequente.count({ where: { idSalle, idAcademi, commentaire: { [Op.like]: 'ABSENT%' } } });
+  return { total, presents, absents, taux: total > 0 ? Math.round(presents / total * 100) : 0 };
 };
 
 module.exports = {
-  marquerPresent,
-  marquerAbsent,
-  getPresencesBySalle,
-  getAbsencesByEleve,
-  getStatistiquesBySalle,
+  faireAppel, marquerPresent, marquerAbsent,
+  getPresencesBySalle, getPresencesByEleve, getAbsencesByEleve,
+  getGlobalStats, getStatistiquesBySalle,
 };

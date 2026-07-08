@@ -16,7 +16,7 @@ const getRoleFromType = (typePersonne) => {
   const roleMap = {
     1: 'ENSEIGNANT',
     2: 'DIRECTEUR',
-    3: 'SECRETAIRE',
+    3: 'RESPONSABLE_ADMIN',
     4: 'PARENT'
   };
   return roleMap[typePersonne] || null;

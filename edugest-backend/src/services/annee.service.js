@@ -1,52 +1,36 @@
 const { AnneeAcademique } = require('../models');
+const { Op } = require('sequelize');
 
-// Récupérer toutes les années scolaires
 const getAllAnnees = async () => {
-  const annees = await AnneeAcademique.findAll({
-    order: [['created_at', 'DESC']],
-  });
-  return annees;
+  return AnneeAcademique.findAll({ order: [['libelle', 'DESC']] });
 };
 
-// Récupérer une année par son ID
+const getAnneeCourante = async () => {
+  const annee = await AnneeAcademique.findOne({ order: [['idAnnee', 'DESC']] });
+  if (!annee) throw new Error('Aucune année académique trouvée');
+  return annee;
+};
+
 const getAnneeById = async (id) => {
   const annee = await AnneeAcademique.findByPk(id);
-  if (!annee) {
-    throw new Error('Année scolaire introuvable');
-  }
+  if (!annee) throw new Error('Année académique introuvable');
   return annee;
 };
 
-// Créer une nouvelle année scolaire
 const createAnnee = async (data) => {
-  const annee = await AnneeAcademique.create({
-    libelle: data.libelle,
-    periode: data.periode,
-  });
-  return annee;
+  return AnneeAcademique.create(data);
 };
 
-// Modifier une année scolaire
 const updateAnnee = async (id, data) => {
   const annee = await getAnneeById(id);
-  await annee.update({
-    libelle: data.libelle,
-    periode: data.periode,
-  });
+  await annee.update(data);
   return annee;
 };
 
-// Supprimer une année scolaire
 const deleteAnnee = async (id) => {
   const annee = await getAnneeById(id);
   await annee.destroy();
-  return { message: 'Année scolaire supprimée avec succès' };
+  return { message: 'Année académique supprimée avec succès' };
 };
 
-module.exports = {
-  getAllAnnees,
-  getAnneeById,
-  createAnnee,
-  updateAnnee,
-  deleteAnnee,
-};
+module.exports = { getAllAnnees, getAnneeCourante, getAnneeById, createAnnee, updateAnnee, deleteAnnee };

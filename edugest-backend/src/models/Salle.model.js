@@ -31,6 +31,10 @@ const Salle = sequelize.define('Salle', {
     type: DataTypes.INTEGER,
     allowNull: true,
   },
+  idTitulaire: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
 }, {
   tableName: 'Salle',
   timestamps: true,

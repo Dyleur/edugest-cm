@@ -6,6 +6,6 @@ const { autoriser } = require('../middlewares/rbac');
 
 router.use(verifyToken);
 
-router.get('/', autoriser(['ADMIN', 'DIRECTEUR', 'SECRETAIRE', 'ENSEIGNANT', 'PARENT']), modeController.getAll);
+router.get('/', autoriser(['ADMIN', 'DIRECTEUR', 'RESPONSABLE_ADMIN', 'ENSEIGNANT', 'PARENT']), modeController.getAll);
 
 module.exports = router;

@@ -1,24 +1,25 @@
 import { useState, useEffect } from 'react';
-import { Users, GraduationCap, School, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
+import { Users, GraduationCap, School, TrendingUp, AlertCircle, CheckCircle, Calendar, ArrowUpRight, DollarSign, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { useLanguage } from '../contexts/LanguageContext';
 import { dashboardAPI } from '../services/api';
+import { mockDashboardStats } from '../data/mock-data';
 
 export default function Dashboard() {
   const { t, language } = useLanguage();
   const [stats, setStats] = useState([
-    { title: t('dashboard.totalStudents'), value: '...', change: '', icon: Users, color: 'bg-blue-500', trend: 'up' },
-    { title: t('dashboard.teachers'), value: '...', change: '', icon: GraduationCap, color: 'bg-purple-500', trend: 'up' },
-    { title: t('dashboard.classes'), value: '...', change: '', icon: School, color: 'bg-green-500', trend: 'stable' },
-    { title: t('dashboard.attendanceRate'), value: '...', change: '', icon: TrendingUp, color: 'bg-yellow-500', trend: 'up' },
+    { title: t('dashboard.totalStudents'), value: '...', change: '', icon: Users, color: 'from-blue-400 to-blue-500', trend: 'up' },
+    { title: t('dashboard.teachers'), value: '...', change: '', icon: GraduationCap, color: 'from-violet-500 to-violet-600', trend: 'up' },
+    { title: t('dashboard.classes'), value: '...', change: '', icon: School, color: 'from-emerald-500 to-emerald-600', trend: 'stable' },
+    { title: t('dashboard.attendanceRate'), value: '...', change: '', icon: TrendingUp, color: 'from-amber-500 to-amber-600', trend: 'up' },
   ]);
 
   useEffect(() => {
-    dashboardAPI.stats().then((stats) => {
-      const totalEleves = stats?.totalEleves ?? 0;
-      const totalEnseignants = stats?.totalEnseignants ?? 0;
-      const totalClasses = stats?.totalClasses ?? 0;
-      const tauxPresence = stats?.tauxPresence ?? 0;
+    dashboardAPI.stats().then((data) => {
+      const totalEleves = data?.totalEleves ?? 0;
+      const totalEnseignants = data?.totalEnseignants ?? 0;
+      const totalClasses = data?.totalClasses ?? 0;
+      const tauxPresence = data?.tauxPresence ?? 0;
 
       setStats([
         {
@@ -26,7 +27,7 @@ export default function Dashboard() {
           value: totalEleves.toLocaleString(),
           change: language === 'fr' ? 'Inscrits cette année' : 'Enrolled this year',
           icon: Users,
-          color: 'bg-blue-500',
+          color: 'from-blue-400 to-blue-500',
           trend: 'up'
         },
         {
@@ -34,7 +35,7 @@ export default function Dashboard() {
           value: totalEnseignants.toString(),
           change: language === 'fr' ? 'Enseignants actifs' : 'Active teachers',
           icon: GraduationCap,
-          color: 'bg-purple-500',
+          color: 'from-violet-500 to-violet-600',
           trend: 'up'
         },
         {
@@ -42,7 +43,7 @@ export default function Dashboard() {
           value: totalClasses.toString(),
           change: language === 'fr' ? 'Classes ouvertes' : 'Active classes',
           icon: School,
-          color: 'bg-green-500',
+          color: 'from-emerald-500 to-emerald-600',
           trend: 'stable'
         },
         {
@@ -50,141 +51,151 @@ export default function Dashboard() {
           value: `${tauxPresence}%`,
           change: language === 'fr' ? `Taux d'assiduité` : 'Attendance rate',
           icon: TrendingUp,
-          color: 'bg-yellow-500',
+          color: 'from-amber-500 to-amber-600',
           trend: 'up'
         }
       ]);
-    })
-    .catch(() => {});
+    }).catch(() => {
+      const data = mockDashboardStats;
+      setStats([
+        { title: t('dashboard.totalStudents'), value: data.totalEleves.toLocaleString(), change: language === 'fr' ? 'Inscrits cette année' : 'Enrolled this year', icon: Users, color: 'from-blue-400 to-blue-500', trend: 'up' },
+        { title: t('dashboard.teachers'), value: data.totalEnseignants.toString(), change: language === 'fr' ? 'Enseignants actifs' : 'Active teachers', icon: GraduationCap, color: 'from-violet-500 to-violet-600', trend: 'up' },
+        { title: t('dashboard.classes'), value: data.totalClasses.toString(), change: language === 'fr' ? 'Classes ouvertes' : 'Active classes', icon: School, color: 'from-emerald-500 to-emerald-600', trend: 'stable' },
+        { title: t('dashboard.attendanceRate'), value: `${data.tauxPresence}%`, change: language === 'fr' ? `Taux d'assiduité` : 'Attendance rate', icon: TrendingUp, color: 'from-amber-500 to-amber-600', trend: 'up' },
+      ]);
+    });
   }, [t, language]);
 
   const recentActivities = language === 'fr' ? [
-    { id: 1, type: 'success', message: 'Nouveau paiement reçu de KAMGA Jean (500,000 FCFA)', time: 'Il y a 5 min' },
-    { id: 2, type: 'warning', message: '12 élèves absents aujourd\'hui', time: 'Il y a 15 min' },
-    { id: 3, type: 'success', message: 'Notes de mathématiques saisies pour la classe CE2-A', time: 'Il y a 1h' },
-    { id: 4, type: 'info', message: 'Nouvelle inscription: TALLA Marie (CP)', time: 'Il y a 2h' },
-    { id: 5, type: 'warning', message: 'Rappel: 45 factures impayées', time: 'Il y a 3h' }
+    { id: 1, type: 'success' as const, message: 'Nouveau paiement reçu de KAMGA Jean (500,000 FCFA)', time: 'Il y a 5 min', icon: DollarSign },
+    { id: 2, type: 'warning' as const, message: '12 élèves absents aujourd\'hui', time: 'Il y a 15 min', icon: AlertCircle },
+    { id: 3, type: 'success' as const, message: 'Notes de mathématiques saisies pour la classe CE2-A', time: 'Il y a 1h', icon: CheckCircle },
+    { id: 4, type: 'info' as const, message: 'Nouvelle inscription: TALLA Marie (CP)', time: 'Il y a 2h', icon: Activity },
+    { id: 5, type: 'warning' as const, message: 'Rappel: 45 factures impayées', time: 'Il y a 3h', icon: AlertCircle }
   ] : [
-    { id: 1, type: 'success', message: 'New payment received from KAMGA Jean (500,000 FCFA)', time: '5 min ago' },
-    { id: 2, type: 'warning', message: '12 students absent today', time: '15 min ago' },
-    { id: 3, type: 'success', message: 'Math grades entered for class CE2-A', time: '1h ago' },
-    { id: 4, type: 'info', message: 'New enrollment: TALLA Marie (CP)', time: '2h ago' },
-    { id: 5, type: 'warning', message: 'Reminder: 45 unpaid invoices', time: '3h ago' }
+    { id: 1, type: 'success' as const, message: 'New payment received from KAMGA Jean (500,000 FCFA)', time: '5 min ago', icon: DollarSign },
+    { id: 2, type: 'warning' as const, message: '12 students absent today', time: '15 min ago', icon: AlertCircle },
+    { id: 3, type: 'success' as const, message: 'Math grades entered for class CE2-A', time: '1h ago', icon: CheckCircle },
+    { id: 4, type: 'info' as const, message: 'New enrollment: TALLA Marie (CP)', time: '2h ago', icon: Activity },
+    { id: 5, type: 'warning' as const, message: 'Reminder: 45 unpaid invoices', time: '3h ago', icon: AlertCircle }
   ];
 
   const upcomingEvents = language === 'fr' ? [
-    { id: 1, title: 'Réunion pédagogique', date: '29 Avr 2026', time: '14:00' },
-    { id: 2, title: 'Fin du 2ème trimestre', date: '30 Avr 2026', time: 'Toute la journée' },
-    { id: 3, title: 'Remise des bulletins', date: '05 Mai 2026', time: '09:00' },
-    { id: 4, title: 'Conseil de discipline', date: '07 Mai 2026', time: '10:00' }
+    { id: 1, title: 'Réunion pédagogique', date: '29 Avr', fullDate: '29 Avr 2026', time: '14:00' },
+    { id: 2, title: 'Fin du 2ème trimestre', date: '30 Avr', fullDate: '30 Avr 2026', time: 'Toute la journée' },
+    { id: 3, title: 'Remise des bulletins', date: '05 Mai', fullDate: '05 Mai 2026', time: '09:00' },
+    { id: 4, title: 'Conseil de discipline', date: '07 Mai', fullDate: '07 Mai 2026', time: '10:00' }
   ] : [
-    { id: 1, title: 'Teaching staff meeting', date: 'Apr 29, 2026', time: '2:00 PM' },
-    { id: 2, title: 'End of 2nd term', date: 'Apr 30, 2026', time: 'All day' },
-    { id: 3, title: 'Report card distribution', date: 'May 05, 2026', time: '9:00 AM' },
-    { id: 4, title: 'Discipline council', date: 'May 07, 2026', time: '10:00 AM' }
+    { id: 1, title: 'Teaching staff meeting', date: 'Apr 29', fullDate: 'Apr 29, 2026', time: '2:00 PM' },
+    { id: 2, title: 'End of 2nd term', date: 'Apr 30', fullDate: 'Apr 30, 2026', time: 'All day' },
+    { id: 3, title: 'Report card distribution', date: 'May 05', fullDate: 'May 05, 2026', time: '9:00 AM' },
+    { id: 4, title: 'Discipline council', date: 'May 07', fullDate: 'May 07, 2026', time: '10:00 AM' }
   ];
 
+  const typeColors: Record<string, string> = {
+    success: 'bg-success/10 text-success',
+    warning: 'bg-warning/10 text-warning',
+    info: 'bg-info/10 text-info',
+  };
+
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{t('dashboard.title')}</h1>
-          <p className="text-gray-600 mt-1">{t('dashboard.subtitle')}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-sm text-gray-600">{t('dashboard.today')}</p>
-          <p className="text-lg font-semibold text-gray-900">
-            {language === 'fr' ? 'Mardi, 29 Avril 2026' : 'Tuesday, April 29, 2026'}
-          </p>
-        </div>
-      </div>
-
-      <div
-        className="relative h-64 rounded-2xl bg-cover bg-center overflow-hidden shadow-xl"
-        style={{
-          backgroundImage: `url(https://images.unsplash.com/photo-1764720573370-5008f1ccc9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzY2hvb2wlMjBjbGFzc3Jvb20lMjBzdHVkZW50cyUyMGxlYXJuaW5nJTIwbW9kZXJufGVufDF8fHx8MTc3NzQ1NzkwNXww&ixlib=rb-4.1.0&q=80&w=1080)`
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/90 to-purple-900/70" />
-        <div className="relative h-full flex flex-col justify-center px-8 text-white">
-          <h2 className="text-4xl font-bold mb-4">{t('dashboard.welcome')}</h2>
-          <p className="text-xl max-w-2xl">
-            {t('dashboard.description')}
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => {
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.title} className="hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">{stat.title}</p>
-                    <p className="text-3xl font-bold mt-2">{stat.value}</p>
-                    <p className="text-xs text-gray-500 mt-1">{stat.change}</p>
+            <div
+              key={stat.title}
+              className="animate-fade-in-up"
+              style={{ animationDelay: `${i * 0.1}s` }}
+            >
+              <Card className="border-border/50 hover:shadow-md transition-all duration-300 overflow-hidden group">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">{stat.title}</p>
+                      <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+                      <p className="text-xs text-muted-foreground">{stat.change}</p>
+                    </div>
+                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:shadow-md transition-all duration-300`}>
+                      <Icon className="w-6 h-6 text-white" />
+                    </div>
                   </div>
-                  <div className={`${stat.color} p-3 rounded-full`}>
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           );
         })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('dashboard.recentActivities')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3 pb-3 border-b last:border-b-0">
-                  {activity.type === 'success' ? (
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5" />
-                  )}
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">{activity.message}</p>
-                    <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Activity className="w-5 h-5 text-primary" />
+                {t('dashboard.recentActivities')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {recentActivities.map((activity) => {
+                  const Icon = activity.icon;
+                  return (
+                    <div
+                      key={activity.id}
+                      className="flex items-start gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group"
+                    >
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${typeColors[activity.type]}`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground">{activity.message}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{activity.time}</p>
+                      </div>
+                      <ArrowUpRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('dashboard.upcomingEvents')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {upcomingEvents.map((event) => (
-                <div key={event.id} className="flex items-start gap-4 pb-3 border-b last:border-b-0">
-                  <div className="bg-blue-100 rounded-lg p-3 text-center min-w-[60px]">
-                    <p className="text-xs text-blue-600 font-medium">
-                      {event.date.split(' ')[language === 'fr' ? 0 : 1]}
-                    </p>
-                    <p className="text-lg font-bold text-blue-900">
-                      {event.date.split(' ')[language === 'fr' ? 1 : 0]}
-                    </p>
+        <div className="animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary" />
+                {t('dashboard.upcomingEvents')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {upcomingEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    className="flex items-start gap-4 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group"
+                  >
+                    <div className="w-14 h-14 rounded-xl bg-primary/10 flex flex-col items-center justify-center flex-shrink-0">
+                      <span className="text-[10px] font-medium text-primary/70 uppercase">
+                        {event.date.split(' ')[0]}
+                      </span>
+                      <span className="text-sm font-bold text-primary">
+                        {event.date.split(' ')[1]}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground text-sm">{event.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{event.time}</p>
+                    </div>
+                    <ArrowUpRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{event.title}</p>
-                    <p className="text-sm text-gray-500 mt-1">{event.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
